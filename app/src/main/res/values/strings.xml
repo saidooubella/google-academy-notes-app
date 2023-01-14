@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Notes Keeper</string>
+    <string name="app_branding">App branding</string>
+    <string name="login">Login</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="sign_up_prompt">Don\'t have an account? Sign up</string>
+    <string name="login_prompt">Already have an account? Login</string>
+    <string name="full_name_hint">Full name</string>
+    <string name="register">Register</string>
+    <string name="confirm_password_hint">Confirm password</string>
+    <string name="add_note_description">Add new note</string>
+    <string name="new_note_title">Add New Note</string>
+    <string name="title_hint">Title</string>
+    <string name="note_hint">Note</string>
+    <string name="empty_note_list_description">No notes available yet</string>
+    <string name="no_notes_description">No notes available</string>
+    <string name="delete_confirmation_title">Delete confirmation</string>
+    <string name="delete_confirmation_message">Are you sure you want to delete this item?</string>
+    <string name="delete_option">Delete</string>
+    <string name="cancel_option">Cancel</string>
+</resources>
