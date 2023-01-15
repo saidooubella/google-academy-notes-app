@@ -1,9 +1,12 @@
-package com.saidooubella.auth
+package com.saidooubella.auth.ui.register
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import com.saidooubella.auth.binding
 import com.saidooubella.auth.databinding.ActivityRegisterBinding
+import com.saidooubella.auth.setSystemBarsLighting
+import com.saidooubella.auth.ui.login.LoginActivity
 
 class RegisterActivity : AppCompatActivity() {
 

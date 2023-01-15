@@ -1,34 +1,24 @@
-package com.saidooubella.auth
+package com.saidooubella.auth.ui.home
 
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.view.ViewGroup.MarginLayoutParams
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.*
-import androidx.lifecycle.*
+import androidx.core.widget.doOnTextChanged
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.shape.MaterialShapeDrawable
+import com.saidooubella.auth.*
+import com.saidooubella.auth.adapters.NotesAdapter
 import com.saidooubella.auth.databinding.ActivityHomeBinding
+import com.saidooubella.auth.db.local.NotesDatabase
+import com.saidooubella.auth.ui.add.NewNoteActivity
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
-internal class HomeViewModel(private val notesDao: NotesDao) : ViewModel() {
-
-    val notes = notesDao.loadAll()
-
-    fun removeNote(id: Long) {
-        viewModelScope.launch { notesDao.delete(id) }
-    }
-
-    class Factory(private val notesDao: NotesDao) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return HomeViewModel(notesDao) as T
-        }
-    }
-}
 
 class HomeActivity : AppCompatActivity() {
 
@@ -70,6 +60,12 @@ class HomeActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.query.collectLatest { binding.clearQueryButton.isGone = it.isEmpty() }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.notes.collectLatest {
                     binding.emptyListIndicator.isGone = it.isNotEmpty()
                     notesAdapter.notes = it
@@ -79,6 +75,14 @@ class HomeActivity : AppCompatActivity() {
 
         binding.addNoteButton.setOnClickListener {
             startActivity(Intent(this, NewNoteActivity::class.java))
+        }
+
+        binding.searchField.doOnTextChanged { text, _, _, _ ->
+            viewModel.setQuery(text.toString())
+        }
+
+        binding.clearQueryButton.setOnClickListener {
+            binding.searchField.text?.clear()
         }
     }
 
@@ -107,6 +111,7 @@ class HomeActivity : AppCompatActivity() {
         val notesListPaddingBottom = binding.noteList.paddingBottom
         val notesListPaddingLeft = binding.noteList.paddingLeft
         val notesListPaddingRight = binding.noteList.paddingRight
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.noteList) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.updatePadding(
@@ -117,17 +122,19 @@ class HomeActivity : AppCompatActivity() {
             insets
         }
 
-        val addNoteMarginBottom = binding.addNoteButton.marginBottom
-        val addNoteMarginRight = binding.addNoteButton.marginRight
-        val addNoteMarginLeft = binding.addNoteButton.marginLeft
+        val addNoteMarginBottom = binding.root.paddingBottom
+        val addNoteMarginRight = binding.root.paddingRight
+        val addNoteMarginLeft = binding.root.paddingLeft
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.addNoteButton) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.updateLayoutParams<MarginLayoutParams> {
-                bottomMargin = addNoteMarginBottom + systemBars.bottom
-                rightMargin = addNoteMarginRight + systemBars.right
-                leftMargin = addNoteMarginLeft + systemBars.left
-            }
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val systemBars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()
+            )
+            view.updatePadding(
+                bottom = addNoteMarginBottom + systemBars.bottom,
+                right = addNoteMarginRight + systemBars.right,
+                left = addNoteMarginLeft + systemBars.left,
+            )
             insets
         }
     }

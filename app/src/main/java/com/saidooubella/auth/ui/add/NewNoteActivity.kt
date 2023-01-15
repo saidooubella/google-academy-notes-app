@@ -1,57 +1,20 @@
-package com.saidooubella.auth
+package com.saidooubella.auth.ui.add
 
 import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.EditText
-import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.core.view.*
 import androidx.core.widget.doOnTextChanged
 import androidx.lifecycle.*
 import com.google.android.material.shape.MaterialShapeDrawable
+import com.saidooubella.auth.db.local.NotesDatabase
+import com.saidooubella.auth.binding
 import com.saidooubella.auth.databinding.ActivityNewNoteBinding
+import com.saidooubella.auth.isLight
+import com.saidooubella.auth.toast
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-
-internal class NewNoteViewModel(
-    private val notesDao: NotesDao,
-    private val editingIndex: Long?,
-) : ViewModel() {
-
-    private val mutableState = MutableStateFlow(Note())
-
-    val state = mutableState.asStateFlow()
-
-    init {
-        if (editingIndex != null) {
-            viewModelScope.launch {
-                mutableState.update { notesDao.load(editingIndex) }
-            }
-        }
-    }
-
-    fun updateContent(
-        title: String = mutableState.value.title,
-        content: String = mutableState.value.content
-    ) = mutableState.update {
-        it.copy(title = title, content = content)
-    }
-
-    fun saveNote() {
-        viewModelScope.launch { notesDao.insert(mutableState.value) }
-    }
-
-    class Factory(
-        private val notesDao: NotesDao,
-        private val editingIndex: Long?,
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return NewNoteViewModel(notesDao, editingIndex) as T
-        }
-    }
-}
 
 class NewNoteActivity : AppCompatActivity() {
 

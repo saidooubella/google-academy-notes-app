@@ -1,4 +1,4 @@
-package com.saidooubella.auth
+package com.saidooubella.auth.ui.splash
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -6,6 +6,10 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import com.saidooubella.auth.R
+import com.saidooubella.auth.postDelayed
+import com.saidooubella.auth.setSystemBarsLighting
+import com.saidooubella.auth.ui.login.LoginActivity
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {

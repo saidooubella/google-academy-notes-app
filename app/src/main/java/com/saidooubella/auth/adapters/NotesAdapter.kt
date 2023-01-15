@@ -1,10 +1,11 @@
-package com.saidooubella.auth
+package com.saidooubella.auth.adapters
 
 import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.saidooubella.auth.databinding.NoteItemBinding
+import com.saidooubella.auth.models.Note
 
 internal class NotesAdapter(
     private val callback: OnItemListener

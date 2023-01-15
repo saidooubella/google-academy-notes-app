@@ -20,4 +20,8 @@
     <string name="delete_confirmation_message">Are you sure you want to delete this item?</string>
     <string name="delete_option">Delete</string>
     <string name="cancel_option">Cancel</string>
+    <string name="search_menu_title">Search</string>
+    <string name="dark_mode_menu_title">Dark Mode</string>
+    <string name="search_query_hint">Enter a search query</string>
+    <string name="clear_description">Clear query button</string>
 </resources>
