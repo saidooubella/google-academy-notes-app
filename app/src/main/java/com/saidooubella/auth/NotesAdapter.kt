@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.saidooubella.auth.databinding.NoteItemBinding
 
 internal class NotesAdapter(
-    private val callback: OnItemLongClicked
+    private val callback: OnItemListener
 ) : RecyclerView.Adapter<NotesAdapter.ViewHolder>() {
 
     internal var notes: List<Note> = emptyList()
@@ -19,7 +19,7 @@ internal class NotesAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
-        return ViewHolder(NoteItemBinding.inflate(inflater, parent, false), callback)
+        return ViewHolder(NoteItemBinding.inflate(inflater, parent, false))
     }
 
     override fun getItemCount(): Int {
@@ -30,29 +30,28 @@ internal class NotesAdapter(
         holder.bind(notes[position])
     }
 
-    internal class ViewHolder(
+    internal inner class ViewHolder(
         private val binding: NoteItemBinding,
-        private val callback: OnItemLongClicked,
     ) : RecyclerView.ViewHolder(binding.root) {
 
         init {
             binding.root.setOnClickListener {
-                callback.onClick(adapterPosition)
+                callback.onClick(notes[adapterPosition].id)
             }
             binding.root.setOnLongClickListener {
-                callback.onLongClick(adapterPosition)
+                callback.onLongClick(notes[adapterPosition].id)
                 true
             }
         }
 
         fun bind(note: Note) {
-            binding.noteTitle.text = note.tile
+            binding.noteTitle.text = note.title
             binding.noteBody.text = note.content
         }
     }
 
-    internal interface OnItemLongClicked {
-        fun onLongClick(index: Int)
-        fun onClick(index: Int)
+    internal interface OnItemListener {
+        fun onLongClick(id: Long)
+        fun onClick(id: Long)
     }
 }
