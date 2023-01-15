@@ -3,67 +3,14 @@ package com.saidooubella.auth
 import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.EditText
-import android.widget.TextView
-import androidx.activity.viewModels
+import android.view.ViewGroup
 import androidx.core.view.*
-import androidx.core.widget.doOnTextChanged
-import androidx.lifecycle.*
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.saidooubella.auth.databinding.ActivityNewNoteBinding
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-
-internal class NewNoteViewModel(
-    private val notesDao: NotesDao,
-    private val editingIndex: Long?,
-) : ViewModel() {
-
-    private val mutableState = MutableStateFlow(Note())
-
-    val state = mutableState.asStateFlow()
-
-    init {
-        if (editingIndex != null) {
-            viewModelScope.launch {
-                mutableState.update { notesDao.load(editingIndex) }
-            }
-        }
-    }
-
-    fun updateContent(
-        title: String = mutableState.value.title,
-        content: String = mutableState.value.content
-    ) = mutableState.update {
-        it.copy(title = title, content = content)
-    }
-
-    fun saveNote() {
-        viewModelScope.launch { notesDao.insert(mutableState.value) }
-    }
-
-    class Factory(
-        private val notesDao: NotesDao,
-        private val editingIndex: Long?,
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return NewNoteViewModel(notesDao, editingIndex) as T
-        }
-    }
-}
 
 class NewNoteActivity : AppCompatActivity() {
 
     private val binding by binding(ActivityNewNoteBinding::inflate)
-    private val viewModel by viewModels<NewNoteViewModel> {
-        NewNoteViewModel.Factory(
-            NotesDatabase.getInstance(this).notesDao, when (intent.hasExtra(EDITING_INDEX)) {
-                true -> intent.getLongExtra(EDITING_INDEX, 0)
-                else -> null
-            }
-        )
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,28 +18,15 @@ class NewNoteActivity : AppCompatActivity() {
 
         settingUpTheUI()
 
-        if (intent.hasExtra(EDITING_INDEX)) {
-            binding.appbar.title = "Editing Note"
+        val editingIndex = when (intent.hasExtra(EDITING_INDEX)) {
+            true -> intent.getIntExtra(EDITING_INDEX, 0)
+            else -> null
         }
 
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.state.distinctUntilChanged { _, new ->
-                    new.title == binding.noteTitleField.text.toString() &&
-                            new.content == binding.noteBodyField.text.toString()
-                }.collectLatest {
-                    binding.noteTitleField.setText(it.title)
-                    binding.noteBodyField.setText(it.content)
-                }
-            }
-        }
-
-        binding.noteTitleField.doOnTextChanged { text, _, _, _ ->
-            viewModel.updateContent(title = text.toString())
-        }
-
-        binding.noteBodyField.doOnTextChanged { text, _, _, _ ->
-            viewModel.updateContent(content = text.toString())
+        if (editingIndex != null) {
+            val note = InMemoryNotesRepository.loadNote(editingIndex)
+            binding.noteTitleField.setText(note.tile)
+            binding.noteBodyField.setText(note.content)
         }
 
         binding.appbar.setNavigationOnClickListener {
@@ -101,11 +35,16 @@ class NewNoteActivity : AppCompatActivity() {
 
         binding.saveNoteButton.setOnClickListener {
 
-            val tile = viewModel.state.value.title
-            val content = viewModel.state.value.content
+            val tile = binding.noteTitleField.text.toString()
+            val content = binding.noteBodyField.text.toString()
 
             if (tile.isNotBlank() || content.isNotBlank()) {
-                viewModel.saveNote()
+                val note = Note(tile, content)
+                if (editingIndex == null) {
+                    InMemoryNotesRepository.insertNote(note)
+                } else {
+                    InMemoryNotesRepository.changeNote(editingIndex, note)
+                }
             } else {
                 toast("Empty notes will note be saved.")
             }
@@ -141,9 +80,8 @@ class NewNoteActivity : AppCompatActivity() {
         val addNoteMarginLeft = binding.root.paddingLeft
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val systemBars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()
-            )
+            val systemBars =
+                insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
             view.updatePadding(
                 bottom = addNoteMarginBottom + systemBars.bottom,
                 right = addNoteMarginRight + systemBars.right,
