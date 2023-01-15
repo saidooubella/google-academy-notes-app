@@ -7,13 +7,36 @@ import android.view.ViewGroup.MarginLayoutParams
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.*
+import androidx.lifecycle.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.saidooubella.auth.databinding.ActivityHomeBinding
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+internal class HomeViewModel(private val notesDao: NotesDao) : ViewModel() {
+
+    val notes = notesDao.loadAll()
+
+    fun removeNote(id: Long) {
+        viewModelScope.launch { notesDao.delete(id) }
+    }
+
+    class Factory(private val notesDao: NotesDao) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return HomeViewModel(notesDao) as T
+        }
+    }
+}
 
 class HomeActivity : AppCompatActivity() {
 
     private val binding by binding(ActivityHomeBinding::inflate)
+
+    private val viewModel by viewModels<HomeViewModel> {
+        HomeViewModel.Factory(NotesDatabase.getInstance(this).notesDao)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,33 +44,37 @@ class HomeActivity : AppCompatActivity() {
 
         settingUpTheUI()
 
-        val notesAdapter = NotesAdapter(object : NotesAdapter.OnItemLongClicked {
+        val notesAdapter = NotesAdapter(object : NotesAdapter.OnItemListener {
 
-            override fun onLongClick(index: Int) {
+            override fun onLongClick(id: Long) {
                 MaterialAlertDialogBuilder(this@HomeActivity)
                     .setTitle(getString(R.string.delete_confirmation_title))
                     .setMessage(getString(R.string.delete_confirmation_message))
                     .setPositiveButton(getString(R.string.delete_option)) { dialog, _ ->
-                        InMemoryNotesRepository.removeNote(index)
+                        viewModel.removeNote(id)
                         dialog.cancel()
                     }
                     .setNegativeButton(getString(R.string.cancel_option)) { dialog, _ -> dialog.cancel() }
                     .show()
             }
 
-            override fun onClick(index: Int) {
+            override fun onClick(id: Long) {
                 startActivity(
                     Intent(this@HomeActivity, NewNoteActivity::class.java)
-                        .putExtra(NewNoteActivity.EDITING_INDEX, index)
+                        .putExtra(NewNoteActivity.EDITING_INDEX, id)
                 )
             }
         })
 
         binding.noteList.adapter = notesAdapter
 
-        InMemoryNotesRepository.loadNotes().observe(this) {
-            binding.emptyListIndicator.isGone = it.isNotEmpty()
-            notesAdapter.notes = it
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.notes.collectLatest {
+                    binding.emptyListIndicator.isGone = it.isNotEmpty()
+                    notesAdapter.notes = it
+                }
+            }
         }
 
         binding.addNoteButton.setOnClickListener {
